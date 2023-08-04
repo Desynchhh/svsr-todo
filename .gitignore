@@ -1,0 +1,8 @@
+pb_data
+pocketbase
+
+react/dist
+react/node_modules
+
+svelte/dist
+svelte/node_modules
