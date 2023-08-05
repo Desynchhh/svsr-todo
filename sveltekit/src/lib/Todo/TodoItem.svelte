@@ -1,0 +1,87 @@
+<script lang="ts">
+    import { enhance } from "$app/forms";
+    import type { Todo, DispatchParams } from "$lib/types";
+    import type { SubmitFunction } from "@sveltejs/kit";
+    import { createEventDispatcher } from "svelte";
+
+    const dispatch = createEventDispatcher();
+    
+    export let todo: Todo;
+
+    const toggleTodoEnhance: SubmitFunction = ({ formElement, formData, action, cancel }) => {
+        const { newCompletedState }: { newCompletedState: string } = Object.fromEntries(formData) as { newCompletedState: any };
+        const stateText = newCompletedState === "true" ? "COMPLETED!" : "INCOMPLETE";
+        return async function({result, update}) {
+            let dispatchParams: DispatchParams;
+            switch(result.type) {
+                case "success":
+                    dispatchParams = {
+                        toastStatus: "daisy-alert-success",
+                        toastMessage: `Todo set to ${stateText}`,
+                    };
+                    dispatch("toggle-todo", dispatchParams);
+                    break;
+                case "error":
+                    dispatchParams = { 
+                        toastStatus: "daisy-alert-error",
+                        toastMessage: "Could not delete Todo",
+                    };
+                    dispatch("toggle-todo", dispatchParams);
+                    break;
+                default:
+                    break;
+            }
+            await update({ reset: false });
+        }
+    }
+
+    const deleteTodoEnhance: SubmitFunction = ({ formElement, formData, action, cancel }) => {
+        return async function({result, update}) {
+            let dispatchParams: DispatchParams;
+            switch(result.type) {
+                case "success":
+                    dispatchParams = { 
+                        toastStatus: "daisy-alert-success",
+                        toastMessage: "Todo deleted successfully",
+                    };
+                    dispatch("delete-todo", dispatchParams);
+                    break;
+                case "error":
+                    dispatchParams = { 
+                        toastStatus: "daisy-alert-error",
+                        toastMessage: "Could not delete Todo",
+                    };
+                    dispatch("delete-todo", dispatchParams);
+                    break;
+                default:
+                    break;
+            }
+            await update({ reset: false });
+        }
+    }
+</script>
+
+<div class="daisy-card w-96 bg-base-100 shadow-xl">
+    <div class="daisy-card-body">
+        <div class="title flex flex-row justify-between">
+            <h2 class="daisy-card-title flex flex-row justify-between">
+                {todo.title}
+            </h2>
+            <div class={`daisy-badge ${todo.completed ? "daisy-badge-success" : "daisy-badge-warning"} font-bold`}>
+                {todo.completed ? "COMPLETED!" : "INCOMPLETE"}
+            </div>
+        </div>
+        <p>{todo.body}</p>
+        <div class="daisy-card-actions justify-end">
+            <form action="?/toggleTodo" method="post" use:enhance={toggleTodoEnhance}>
+                <input type="hidden" name="todoId" hidden required value={todo.id}>
+                <input type="hidden" name="newCompletedState" hidden required value={!todo.completed}>
+                <button class="daisy-btn daisy-btn-sm daisy-btn-primary" type="submit">Toggle complete</button>
+            </form>
+            <form action="?/deleteTodo" method="post" use:enhance={deleteTodoEnhance}>
+                <input type="hidden" name="todoId" hidden required value={todo.id}>
+                <button class="daisy-btn daisy-btn-sm daisy-btn-error text-1xl" type="submit">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
